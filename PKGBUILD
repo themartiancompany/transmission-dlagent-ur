@@ -1,26 +1,88 @@
-# Maintainer: Pellegrino Prevete <pellegrinoprevete@gmail.com>
+# SPDX-License-Identifier: AGPL-3.0
+#
+# Maintainer: Truocolo <truocolo@aol.com>
+# Maintainer: Pellegrino Prevete (tallero) <pellegrinoprevete@gmail.com>
 
-pkgname="transmission-dlagent"
-pkgver=1.0
+_git="false"
+_offline="false"
+_protocol="magnet"
+_component="dlagent"
+_py="python"
+_pkg=transmission
+pkgname="${_pkg}-${_component}"
+_commit="48ef542382d044c7d4d562b73f21119e5b728e78"
+pkgver=1.0.1.1
 pkgrel=1
-pkgdesc="makepkg download agent for magnet URIs."
-arch=('any')
-url="https://aur.archlinux.org/packages/transmission-dlagent"
-depends=('python' 'transmission-cli')
-license=("AGPL3")
-source=("transmission-dlagent"
-	"transmission-quit"
-	"makepkg.conf")
-sha256sums=("bbd98794f4e542817d81107cd5dd648384b856667f26cb281468008dfaa2019e"
-            "b07e32b4c1424d8e62adf5c05acd02e82be0a6549c49879aebeaa813b4840411"
-            "499743e52fb5d3d7fec5f26d1aa560a76d6f89858335182cd67748df7e4f63a1")
+_pkgdesc=(
+  "Magnet URIs makepkg download agent"
+  "using the Transmission BitTorrent client."
+)
+pkgdesc="${_pkgdesc[*]}"
+arch=(
+  'any'
+)
+_http="https://github.com"
+_ns="themartiancompany"
+url="${_http}/${_ns}/${pkgname}"
+depends=(
+  "${_py}"
+  "${_pkg}-cli"
+)
+provides=(
+  "${_protocol}-${_component}"
+)
+license=(
+  "AGPL3"
+)
+_url="${url}"
+_tag="${_commit}"
+_tag_name="commit"
+_tarname="${pkgname}-${_tag}"
+if [[ "${_offline}" == "true" ]]; then
+  _url="file://${HOME}/${pkgname}"
+fi
+if [[ "${_git}" == true ]]; then
+  makedepends+=(
+    "git"
+  )
+  _src="${_tarname}::git+${_url}#${_tag_name}=${_tag}?signed"
+  _sum="SKIP"
+elif [[ "${_git}" == false ]]; then
+  if [[ "${_tag_name}" == 'pkgver' ]]; then
+    _src="${_tarname}.tar.gz::${_url}/archive/refs/tags/${_tag}.tar.gz"
+    _sum="d4f4179c6e4ce1702c5fe6af132669e8ec4d0378428f69518f2926b969663a91"
+  elif [[ "${_tag_name}" == "commit" ]]; then
+    _src="${_tarname}.zip::${_url}/archive/${_commit}.zip"
+    _sum='1f7b51c275886fecd602272554c8f0e931ad4ef125d5bef9e10c10f4954cc706'
+  fi
+fi
+source=(
+  "${_src}"
+)
+sha256sums=(
+  "${_sum}"
+)
+
+validpgpkeys=(
+  # TODO: update these keys on all packages (and when?)
+  # Truocolo <truocolo@aol.com>
+  # '97E989E6CF1D2C7F7A41FF9F95684DBE23D6A3E9'
+  # 'DD6732B02E6C88E9E27E2E0D5FC6652B9D9A6C01'
+)
+
+check() {
+  cd \
+    "${_tarname}"
+  make \
+    -k \
+    check
+}
 
 package() {
-  local _dest="${pkgdir}/usr/share/${pkgname}"
-  local _bin="${pkgdir}/usr/bin"
-  mkdir -p "${_dest}"
-  mkdir -p "${_bin}"
-  install -Dm755 "${pkgname}" "${_bin}"
-  install -Dm755 "transmission-quit" "${_bin}"
-  install -Dm644 "makepkg.conf" "${_dest}"
+  cd \
+    "${_tarname}"
+  make \
+    PREFIX="/usr" \
+    DESTDIR="${pkgdir}" \
+    install
 }
